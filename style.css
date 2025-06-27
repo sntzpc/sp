@@ -610,6 +610,11 @@ body.dark-mode .print-btn:hover {
     margin-top: 12px;
 }
 
+#geo-map {
+    touch-action: auto !important;
+    -ms-touch-action: auto !important;
+}
+
 /* Versi Mobile */
 @media screen and (max-width: 600px) {
     table {
