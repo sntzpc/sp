@@ -3317,8 +3317,43 @@ function updateGeoMapTracking(dataArr) {
     if (last) userMarker.setLatLng(last);
 }
 
+function colorToHex(color) {
+  if (color === 'red')    return '#ff0000';
+  if (color === 'blue')   return '#007bff';
+  if (color === 'green')  return '#28a745';
+  if (color === 'orange') return '#ffa500';
+  if (color === 'purple') return '#800080';
+  return color;
+}
+
+function createColoredPlacemarkSVG(color = '#ff0000') {
+  return `
+    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" 
+         xmlns="http://www.w3.org/2000/svg">
+      <g>
+        <ellipse cx="16" cy="11" rx="7" ry="7" fill="${color}"/>
+        <path d="M16 30C16 30 5 20.3628 5 12.5C5 6.70101 10.4772 2 16 2C21.5228 2 27 6.70101 27 12.5C27 20.3628 16 30 16 30Z" fill="${color}" stroke="#666" stroke-width="2"/>
+        <circle cx="16" cy="13" r="3" fill="#fff" stroke="#888" stroke-width="1"/>
+      </g>
+    </svg>
+  `;
+}
+
+function createColoredPlacemarkIcon(color) {
+  let svg = createColoredPlacemarkSVG(color);
+  let url = "data:image/svg+xml;base64," + btoa(svg);
+  return L.icon({
+    iconUrl: url,
+    iconSize: [32, 32],
+    iconAnchor: [16, 32],
+    popupAnchor: [0, -28]
+  });
+}
+
+
+
 // PLACEMARK HANDLING
-function addPlacemark(latlng, note, color = 'blue') {
+function addPlacemark(latlng, note, color = 'red') {
     placemarks.push({
         lat: latlng.lat,
         lng: latlng.lng,
@@ -3326,23 +3361,25 @@ function addPlacemark(latlng, note, color = 'blue') {
         color: color
     });
     localStorage.setItem("geoPlacemarks", JSON.stringify(placemarks));
-    restorePlacemarks();
+    let icon = createColoredPlacemarkIcon(colorToHex(color));
+    if (placemarksLayer) {
+        let marker = L.marker([latlng.lat, latlng.lng], { icon: icon }).addTo(placemarksLayer);
+        if (note) marker.bindPopup(note).openPopup();
+    }
     renderPlacemarkTable();
 }
+
 
 function restorePlacemarks() {
     if (!placemarksLayer) return;
     placemarksLayer.clearLayers();
     placemarks.forEach((pm, i) => {
-        let marker = L.circleMarker([pm.lat, pm.lng], {
-            radius: 9,
-            color: pm.color || 'blue',
-            fillColor: pm.color || 'blue',
-            fillOpacity: 0.7
-        }).addTo(placemarksLayer);
+        let icon = createColoredPlacemarkIcon(colorToHex(pm.color || 'red'));
+        let marker = L.marker([pm.lat, pm.lng], { icon: icon }).addTo(placemarksLayer);
         if (pm.note) marker.bindPopup(pm.note);
     });
 }
+
 
 function renderPlacemarkTable() {
     let tbody = document.getElementById('placemarkTable').querySelector('tbody');
