@@ -4405,6 +4405,44 @@
         let trackingStartTime = null;
         let trackingPauseTime = null;
         let placemarks = JSON.parse(localStorage.getItem("geoPlacemarks") || "[]");
+        let userLocationWatchId = null;
+
+        function startUserLocationWatcher() {
+            if (!navigator.geolocation) {
+                updateTrackingStatus('Perangkat tidak mendukung GPS!');
+                return;
+            }
+            // Sudah ada watcher? clear dulu
+            if (userLocationWatchId !== null) {
+                navigator.geolocation.clearWatch(userLocationWatchId);
+                userLocationWatchId = null;
+            }
+            userLocationWatchId = navigator.geolocation.watchPosition(
+                pos => {
+                    const {
+                        latitude,
+                        longitude,
+                        accuracy
+                    } = pos.coords;
+                    if (userMarker) {
+                        userMarker.setLatLng([latitude, longitude]);
+                        // Map akan pan ke posisi user saat pertama kali (bisa diubah sesuai kebutuhan)
+                        if (!map._userCentered) {
+                            map.setView([latitude, longitude], map.getZoom());
+                            map._userCentered = true; // custom property, supaya tidak terus auto-pan
+                        }
+                    }
+                    updateTrackingStatus(`Posisi Anda: (${latitude.toFixed(5)}, ${longitude.toFixed(5)})`);
+                },
+                err => {
+                    updateTrackingStatus('Gagal ambil posisi: ' + err.message);
+                }, {
+                    enableHighAccuracy: true,
+                    maximumAge: 5000,
+                    timeout: 10000
+                }
+            );
+        }
 
         // Inisialisasi MAP & Layer
         function initGeoMap() {
@@ -4431,6 +4469,7 @@
             }).addTo(map);
             restorePlacemarks();
             renderPlacemarkTable();
+            startUserLocationWatcher();
         }
 
         // TRACKING REAL TIME
@@ -4787,9 +4826,9 @@
             let reader = new FileReader();
             reader.onload = function (e) {
                 let nw = document.getElementById('offlineMapNW').value.split(',').map(x => parseFloat(x
-            .trim()));
+                    .trim()));
                 let se = document.getElementById('offlineMapSE').value.split(',').map(x => parseFloat(x
-            .trim()));
+                    .trim()));
                 if (nw.length !== 2 || se.length !== 2 || isNaN(nw[0]) || isNaN(se[0])) {
                     alert('LatLng belum valid!');
                     return;
@@ -4847,7 +4886,6 @@
                 console.error(err);
             }
         }
-
         document.getElementById('btnRemoveOfflineMap').onclick = function () {
             if (offlineImageLayer) map.removeLayer(offlineImageLayer);
             offlineImageLayer = null;
@@ -4934,6 +4972,11 @@
                 }, 300);
             }
         };
+        window.addEventListener("beforeunload", function () {
+            if (userLocationWatchId !== null) {
+                navigator.geolocation.clearWatch(userLocationWatchId);
+            }
+        });
     </script>
 </body>
 
