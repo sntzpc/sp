@@ -3717,6 +3717,7 @@ openTab = function (evt, tabName) {
             restorePlacemarks();
             renderPlacemarkTable();
             updateGeoMapTracking(trackingData);
+            startUserLocationWatcher();
         }, 300);
     }
 };
