@@ -3117,26 +3117,27 @@ function getLocalStorageUsage() {
 }
 
 function updateStorageBar() {
-    const usedBytes = getLocalStorageUsage();
-    const maxBytes = 5 * 1024 * 1024;
-    const percent = Math.min(usedBytes / maxBytes * 100, 100);
-    let color = "#3498db";
-    if (percent > 80) color = "#e74c3c";
-    else if (percent > 60) color = "#f1c40f";
+            const usedBytes = getLocalStorageUsage();
+            const maxBytes = 5 * 1024 * 1024;
+            const freeBytes = Math.max(maxBytes - usedBytes, 0);
+            const percent = Math.min(usedBytes / maxBytes * 100, 100);
+            let color = "#3498db";
+            if (percent > 80) color = "#e74c3c";
+            else if (percent > 60) color = "#f1c40f";
 
-    // Update bar
-    const bar = document.getElementById("storage-bar");
-    bar.style.width = percent + "%";
-    bar.style.background = color;
+            // Update bar
+            const bar = document.getElementById("storage-bar");
+            bar.style.width = percent + "%";
+            bar.style.background = color;
 
-    // Info teks
-    const usedMB = (usedBytes / (1024 * 1024)).toFixed(2);
-    const freeMB = (maxBytes / (1024 * 1024)).toFixed(0);
-    let info = `${usedMB} MB free of ${freeMB} MB`;
+            // Info teks
+            const freeMB = (freeBytes / (1024 * 1024)).toFixed(2);
+            const maxMB = (maxBytes / (1024 * 1024)).toFixed(0);
+            let info = `${freeMB} MB free of ${maxMB} MB`;
 
-    const infoText = document.getElementById("storage-info-text");
-    infoText.textContent = info;
-}
+            const infoText = document.getElementById("storage-info-text");
+            infoText.textContent = info;
+        }
 
 document.addEventListener("DOMContentLoaded", function () {
     updateStorageBar();
@@ -3573,51 +3574,51 @@ document.getElementById('btnSetOfflineMap').onclick = function () {
     let img = fileInput.files[0];
     let reader = new FileReader();
     reader.onload = function (e) {
-    if (img.type === "application/pdf") {
-        // Coba ekstrak georeference otomatis dari PDF
-        extractGeoReferenceFromPDF(e.target.result).then(geoRef => {
-            if (geoRef && geoRef.bounds) {
-                // Disable input manual jika georeference ditemukan
-                document.getElementById('offlineMapNW').disabled = true;
-                document.getElementById('offlineMapSE').disabled = true;
-                // Ambil NW (maxY, minX) dan SE (minY, maxX)
-                let minX = geoRef.bounds[0];
-                let minY = geoRef.bounds[1];
-                let maxX = geoRef.bounds[2];
-                let maxY = geoRef.bounds[3];
-                let nw = [maxY, minX];
-                let se = [minY, maxX];
-                updateTrackingStatus("GeoPDF terdeteksi, georeference otomatis diterapkan.");
-                renderPDFasOverlay(e.target.result, nw, se);
-            } else {
-                // Enable input manual jika tidak ditemukan
-                document.getElementById('offlineMapNW').disabled = false;
-                document.getElementById('offlineMapSE').disabled = false;
-                updateTrackingStatus("GeoPDF tidak ditemukan, silakan input manual.");
-                let nw = document.getElementById('offlineMapNW').value.split(',').map(x => parseFloat(x.trim()));
-                let se = document.getElementById('offlineMapSE').value.split(',').map(x => parseFloat(x.trim()));
-                renderPDFasOverlay(e.target.result, nw, se);
+        if (img.type === "application/pdf") {
+            // Coba ekstrak georeference otomatis dari PDF
+            extractGeoReferenceFromPDF(e.target.result).then(geoRef => {
+                if (geoRef && geoRef.bounds) {
+                    // Disable input manual jika georeference ditemukan
+                    document.getElementById('offlineMapNW').disabled = true;
+                    document.getElementById('offlineMapSE').disabled = true;
+                    // Ambil NW (maxY, minX) dan SE (minY, maxX)
+                    let minX = geoRef.bounds[0];
+                    let minY = geoRef.bounds[1];
+                    let maxX = geoRef.bounds[2];
+                    let maxY = geoRef.bounds[3];
+                    let nw = [maxY, minX];
+                    let se = [minY, maxX];
+                    updateTrackingStatus("GeoPDF terdeteksi, georeference otomatis diterapkan.");
+                    renderPDFasOverlay(e.target.result, nw, se);
+                } else {
+                    // Enable input manual jika tidak ditemukan
+                    document.getElementById('offlineMapNW').disabled = false;
+                    document.getElementById('offlineMapSE').disabled = false;
+                    updateTrackingStatus("GeoPDF tidak ditemukan, silakan input manual.");
+                    let nw = document.getElementById('offlineMapNW').value.split(',').map(x => parseFloat(x.trim()));
+                    let se = document.getElementById('offlineMapSE').value.split(',').map(x => parseFloat(x.trim()));
+                    renderPDFasOverlay(e.target.result, nw, se);
+                }
+            });
+        } else {
+            // File image: PNG/JPG, tetap input manual
+            let nw = document.getElementById('offlineMapNW').value.split(',').map(x => parseFloat(x.trim()));
+            let se = document.getElementById('offlineMapSE').value.split(',').map(x => parseFloat(x.trim()));
+            if (nw.length !== 2 || se.length !== 2 || isNaN(nw[0]) || isNaN(se[0])) {
+                alert('LatLng belum valid!');
+                return;
             }
-        });
-    } else {
-        // File image: PNG/JPG, tetap input manual
-        let nw = document.getElementById('offlineMapNW').value.split(',').map(x => parseFloat(x.trim()));
-        let se = document.getElementById('offlineMapSE').value.split(',').map(x => parseFloat(x.trim()));
-        if (nw.length !== 2 || se.length !== 2 || isNaN(nw[0]) || isNaN(se[0])) {
-            alert('LatLng belum valid!');
-            return;
+            if (offlineImageLayer) map.removeLayer(offlineImageLayer);
+            offlineImageLayer = L.imageOverlay(e.target.result, [
+                [nw[0], nw[1]],
+                [se[0], se[1]]
+            ]).addTo(map);
+            map.fitBounds([
+                [nw[0], nw[1]],
+                [se[0], se[1]]
+            ]);
         }
-        if (offlineImageLayer) map.removeLayer(offlineImageLayer);
-        offlineImageLayer = L.imageOverlay(e.target.result, [
-            [nw[0], nw[1]],
-            [se[0], se[1]]
-        ]).addTo(map);
-        map.fitBounds([
-            [nw[0], nw[1]],
-            [se[0], se[1]]
-        ]);
-    }
-};
+    };
     if (img.type === "application/pdf") {
         reader.readAsArrayBuffer(img);
     } else {
@@ -3664,7 +3665,9 @@ async function extractGeoReferenceFromPDF(arrayBuffer) {
         return null;
     }
     try {
-        const loadingTask = window.pdfjsLib.getDocument({ data: arrayBuffer });
+        const loadingTask = window.pdfjsLib.getDocument({
+            data: arrayBuffer
+        });
         const pdf = await loadingTask.promise;
         const page = await pdf.getPage(1);
 
