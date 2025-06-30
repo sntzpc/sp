@@ -3786,3 +3786,19 @@ window.addEventListener("beforeunload", function () {
         navigator.geolocation.clearWatch(userLocationWatchId);
     }
 });
+
+// Nonaktifkan pull-to-refresh gesture di mobile
+        document.addEventListener('touchstart', function (e) {
+            this._startY = e.touches[0].clientY;
+        }, {
+            passive: false
+        });
+
+        document.addEventListener('touchmove', function (e) {
+            const deltaY = e.touches[0].clientY - this._startY;
+            if (window.scrollY === 0 && deltaY > 10) {
+                e.preventDefault();
+            }
+        }, {
+            passive: false
+        });

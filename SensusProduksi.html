@@ -702,6 +702,11 @@
 </head>
 
 <body>
+    <div style="display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 8px;">
+        <button onclick="window.location.reload()"
+            style="background: #3498db; color: white; padding: 6px 12px; border: none; border-radius: 4px;">🔄</button>
+    </div>
+
     <div class="judul">
         <h2>Aplikasi Sensus Produksi</h2>
         <h2>Kelapa Sawit</h2>
@@ -4841,7 +4846,7 @@
                             let nw = [maxY, minX];
                             let se = [minY, maxX];
                             updateTrackingStatus(
-                            "GeoPDF terdeteksi, georeference otomatis diterapkan.");
+                                "GeoPDF terdeteksi, georeference otomatis diterapkan.");
                             renderPDFasOverlay(e.target.result, nw, se);
                         } else {
                             // Enable input manual jika tidak ditemukan
@@ -5041,6 +5046,22 @@
             if (userLocationWatchId !== null) {
                 navigator.geolocation.clearWatch(userLocationWatchId);
             }
+        });
+
+        // Nonaktifkan pull-to-refresh gesture di mobile
+        document.addEventListener('touchstart', function (e) {
+            this._startY = e.touches[0].clientY;
+        }, {
+            passive: false
+        });
+
+        document.addEventListener('touchmove', function (e) {
+            const deltaY = e.touches[0].clientY - this._startY;
+            if (window.scrollY === 0 && deltaY > 10) {
+                e.preventDefault();
+            }
+        }, {
+            passive: false
         });
     </script>
 </body>
